@@ -12,7 +12,6 @@ onMounted(() => {
   let scene = initScreen();
 
   let camera = initCamera();
-  camera.position.set(0, 5, 5);
   camera.rotation.set(-0.25 * Math.PI, 0, 0);
 
   let renderer = initRenderer();
@@ -53,104 +52,88 @@ onMounted(() => {
   world.broadphase = new CANNON.NaiveBroadphase();
   world.solver.iterations = 5;
 
-  let planegeometry = new THREE.BoxGeometry(50, 0.2, 50);
-  let planematerial = new THREE.MeshLambertMaterial({ color: 0xd3d3d3 });
-  let plane = new THREE.Mesh(planegeometry, planematerial);
-  plane.castShadow = plane.receiveShadow = true;
-  plane.position.y = -0.1;
-  scene.add(plane);
-
-  let planeGround = new CANNON.Body({
-    mass: 0,
-    position: new CANNON.Vec3(0, -0.1, 0),
-    shape: new CANNON.Box(new CANNON.Vec3(25, 0.1, 25)),
-    material: new CANNON.Material({ friction: 0.05, restitution: 0 }),
+  // 地面
+  addBox({
+    shape: { x: 50, y: 0.2, z: 50 },
+    position: { x: 0, y: -0.1, z: 0 },
+    material: { color: 0xd3d3d3 },
   });
-  plane.userData = planeGround;
-  world.addBody(planeGround);
 
-  let cubegeometry = new THREE.BoxGeometry(1, 1, 1);
-  let cubematerial = new THREE.MeshLambertMaterial({ color: 0x00bfff });
-  let cube = new THREE.Mesh(cubegeometry, cubematerial);
-  cube.castShadow = cube.receiveShadow = true;
-  cube.position.set(0, 0.5, 0);
-  scene.add(cube);
-
-  let bodyBox = new CANNON.Body({
-    mass: 1,
-    position: new CANNON.Vec3(0, 0.5, 0),
-    shape: new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.5)),
-    material: new CANNON.Material({ friction: 0.1, restitution: 0 }),
+  // 右侧墙壁
+  addBox({
+    shape: { x: 0.2, y: 4.9, z: 50 },
+    position: { x: 24.9, y: 2.5, z: 0 },
+    material: { color: 0xd3d3d3 },
   });
-  cube.userData = bodyBox;
-  world.addBody(bodyBox);
+
+  // 左侧墙壁
+  addBox({
+    shape: { x: 0.2, y: 4.9, z: 50 },
+    position: { x: -24.9, y: 2.5, z: 0 },
+    material: { color: 0xd3d3d3 },
+  });
+
+  // 前侧墙壁
+  addBox({
+    shape: { x: 50, y: 4.9, z: 0.2 },
+    position: { x: 0, y: 2.5, z: 24.9 },
+    material: { color: 0xd3d3d3 },
+  });
+
+  // 后侧墙壁
+  addBox({
+    shape: { x: 50, y: 4.9, z: 0.2 },
+    position: { x: 0, y: 2.5, z: -24.9 },
+    material: { color: 0xd3d3d3 },
+  });
+
+  // eslint-disable-next-line no-unused-vars
+  let { sphere, sphereBody } = addSphere(0.5, 0x00bfff);
 
   let keyPressSet = {
-    w: {
+    KeyW: {
       status: false,
       time: 0,
+      function: () => {
+        sphereBody.position.z -= 0.1;
+      },
     },
-    a: {
+    KeyA: {
       status: false,
       time: 0,
+      function: () => {
+        sphereBody.position.x -= 0.1;
+      },
     },
-    s: {
+    KeyS: {
       status: false,
       time: 0,
+      function: () => {
+        sphereBody.position.z += 0.1;
+      },
     },
-    d: {
+    KeyD: {
       status: false,
       time: 0,
+      function: () => {
+        sphereBody.position.x += 0.1;
+      },
     },
-    space: {
+    Space: {
       status: false,
       time: 0,
+      function: () => {
+        sphereBody.position.y += 0.1;
+      },
     },
   };
 
   window.addEventListener("keydown", (e) => {
-    console.log(e);
-    switch (e.code) {
-      case "KeyD":
-        keyPressSet.d.status = true;
-        break;
-      case "KeyA":
-        keyPressSet.a.status = true;
-        break;
-      case "KeyS":
-        keyPressSet.s.status = true;
-        break;
-      case "KeyW":
-        keyPressSet.w.status = true;
-        break;
-      case "Space":
-        keyPressSet.space.status = true;
-        break;
-      default:
-        break;
-    }
+    keyPressSet[e.code].status = true;
   });
 
   window.addEventListener("keyup", (e) => {
-    switch (e.code) {
-      case "KeyD":
-        keyPressSet.d.status = false;
-        break;
-      case "KeyA":
-        keyPressSet.a.status = false;
-        break;
-      case "KeyS":
-        keyPressSet.s.status = false;
-        break;
-      case "KeyW":
-        keyPressSet.w.status = false;
-        break;
-      case "Space":
-        keyPressSet.space.status = false;
-        break;
-      default:
-        break;
-    }
+    keyPressSet[e.code].status = false;
   });
 
   animate();
@@ -188,47 +171,23 @@ onMounted(() => {
     scene.add(light);
   }
 
+  // 执行渲染
   function animate() {
     Object.keys(keyPressSet).forEach((key) => {
-      switch (key) {
-        case "d":
-          if (keyPressSet[key].status) {
-            bodyBox.position.x += 0.1;
-            camera.position.x += 0.1;
-          }
-          break;
-        case "a":
-          if (keyPressSet[key].status) {
-            bodyBox.position.x -= 0.1;
-            camera.position.x -= 0.1;
-          }
-          break;
-        case "s":
-          if (keyPressSet[key].status) {
-            bodyBox.position.z += 0.1;
-            camera.position.z += 0.1;
-          }
-          break;
-        case "w":
-          if (keyPressSet[key].status) {
-            bodyBox.position.z -= 0.1;
-            camera.position.z -= 0.1;
-          }
-          break;
-        case "space":
-          if (keyPressSet[key].status) {
-            bodyBox.position.y += 0.1;
-          }
-          break;
-        default:
-          break;
-      }
+      let keyConfig = keyPressSet[key];
+      if (keyConfig.status) keyConfig.function();
     });
+    camera.position.set(
+      sphereBody.position.x,
+      sphereBody.position.y + 10,
+      sphereBody.position.z + 10
+    );
     updatePhysics();
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
   }
 
+  // 更新物理引擎
   function updatePhysics() {
     // world.step
     world.step(1 / 60); //第一个参数是以固定步长更新物理世界参数（详情请看api）
@@ -239,6 +198,63 @@ onMounted(() => {
         d.quaternion.copy(d.userData.quaternion);
       }
     });
+  }
+
+  // 添加立方体模型与物理刚体
+  function addBox(data) {
+    // 添加立方体3d模型
+    let groundGeometry = new THREE.BoxGeometry(
+      data.shape.x,
+      data.shape.y,
+      data.shape.z
+    );
+    let groundMaterial = new THREE.MeshLambertMaterial({
+      color: data.material.color,
+    });
+    let ground = new THREE.Mesh(groundGeometry, groundMaterial);
+    ground.castShadow = ground.receiveShadow = true;
+    ground.position.set(data.position.x, data.position.y, data.position.z);
+    scene.add(ground);
+
+    // 添加立方体物理刚体
+    let groundBody = new CANNON.Body({
+      mass: 0,
+      position: new CANNON.Vec3(
+        data.position.x,
+        data.position.y,
+        data.position.z
+      ),
+      shape: new CANNON.Box(
+        new CANNON.Vec3(data.shape.x / 2, data.shape.y / 2, data.shape.z / 2)
+      ),
+      material: new CANNON.Material({ friction: 0.3, restitution: 0.3 }),
+    });
+    ground.userData = groundBody;
+    world.addBody(groundBody);
+
+    return { ground, groundBody };
+  }
+
+  // 添加球体模型与物理刚体
+  function addSphere(radius, color) {
+    // 添加球体3d模型
+    var sphereGeometry = new THREE.SphereGeometry(radius, 32, 32);
+    var sphereMaterial = new THREE.MeshLambertMaterial({ color });
+    var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+    sphere.castShadow = sphere.receiveShadow = true;
+    sphere.position.y = radius / 2;
+    scene.add(sphere);
+
+    // 添加球体物理刚体
+    let sphereBody = new CANNON.Body({
+      mass: 1,
+      position: new CANNON.Vec3(0, radius / 2, 0),
+      shape: new CANNON.Sphere(radius),
+      material: new CANNON.Material({ friction: 0.3, restitution: 0.3 }),
+    });
+    sphere.userData = sphereBody;
+    world.addBody(sphereBody);
+    return { sphere, sphereBody };
   }
 });
 </script>
